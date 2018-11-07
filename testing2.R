@@ -21,4 +21,3 @@ isnull
 isnull%>%
   dplyr::filter_all(any_vars(stringr::str_detect(.,pattern = "TRUE")))
 
-class(isnull)
