@@ -12,6 +12,7 @@ data <- read.csv("file path")
 
 data <- readxl::read_xlsx("C:/Users/ADMIN/Desktop/metadata.xlsx")
 data
+
 ## Assign id number for recognition of each row
 data %>% 
   mutate(rownum = 1:n())
