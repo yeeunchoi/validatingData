@@ -10,6 +10,8 @@ data <-read_xlsx("file path") # if each sheet has to be examined, use "sheet = n
 ## IF the file csv
 data <- read.csv("file path")
 
+data <- readxl::read_xlsx("C:/Users/ADMIN/Desktop/metadata.xlsx")
+data
 ## Assign id number for recognition of each row
 data %>% 
   mutate(rownum = 1:n())

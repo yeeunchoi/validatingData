@@ -4,6 +4,13 @@ require(readxl)
 require(dplyr)
 require(stringr)
 ## open metadata into R
+read_data <- function(filepath){
+  readxl::read_xlsx(filepath)
+}
+
+data<- read_data("C:/Users/ADMIN/Desktop/metadata.xlsx")
+data
+
 data <-read_xlsx("C:/Users/ADMIN/Desktop/metadata.xlsx")
 data
 data2 <- read_xlsx("C:/Users/ADMIN/Desktop/data.xlsx")

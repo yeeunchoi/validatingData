@@ -1,3 +1,4 @@
+
 ### 1. Raw Data (Input)
 
 require(readxl)
@@ -6,8 +7,9 @@ require(stringr)
 
 # both data and metadata files 
 read_data <- function(datapath){
-  read_xlsx(datapath)
+  readxl::read_xlsx(datapath)
 }
+# data <- read_data(filepath)로 해서 데이터 불러와야함 
 
 # for data file 
 data_list <- function(data){
@@ -16,8 +18,7 @@ data_list <- function(data){
 
 # for metadate file ONLY
 meta_list <- function(metadata, label){
-  require(dplyr)
-  metalist <- rep(select(metadata, label)) ## NA should be omitted 
+  metalist <- rep(dplyr::select(metadata, label)) ## NA should be omitted 
 }
 
 
@@ -40,21 +41,20 @@ ismatching<- function (datalist, metalist){
 # A function that creates a list that contains items that should not contain null 
 null_list <- function (metadata, nullable, Label){
   nullList <- data %>% 
-    filter(Nullble == "NO") %>% 
-    select(Label)
+    dplyr::filter(Nullble == "NO") %>% 
+    dplyr::select(Label)
   nullList<- rep(nullList)
-  return(nullList)
 }
   
 # A function that checks null 
 null_check <- function (nlist, data){
   for (item in nlist){
     selected<- data %>%
-      select(item)
+      dplyr::select(item)
   }
   isnull<-data.frame(is.na(selected))
   isnull%>%
-    filter_all(any_vars(str_detect(.,pattern = "TRUE")))
+    dplyr::filter_all(any_vars(stringr::str_detect(.,pattern = "TRUE")))
 }
 
 ### 4. Detecting Inconsistencies 
@@ -80,39 +80,31 @@ addRule <- function(rulefilepath, rules){
       append = TRUE)
 }
 
-
-# detecting inconsistencies 
-### DETECING INCONSISTENCIES ###
-# OPEN EDITFILE
-EF <- editfile("C:/Users/ADMIN/Desktop/연구데이터/증상 치법의 유의조합_C14050_김안나/rules.txt")
-
-# violatedERRORS : telling which rules have been violated by which data value
-DE1<- violatedEdits(EF,data)
-DE1 <- data.frame(DE1)
-
-newdata <- data.frame(lapply(DE1, function(x) if(is.logical(x)) { 
-  return(as.character(x))
-} else {  
-  return(x) 
+violatedRule <- function(data, filepath){
+  rules <- editrules::editfile(filepath)
+  errors <- data.frame(editrules::violatedEdits(rules, data))
+  newdata <- data.frame(lapply(errors, function(x) if(is.logical(x)) { 
+    return(as.character(x))
+  } else {  
+    return(x) 
+  }
+  ), stringsAsFactors=FALSE)
+  
+  newdata %>%
+    dplyr::filter_all(any_vars(stringr::str_detect(., pattern = "TRUE")))
+  # write the results in text file 
 }
-), stringsAsFactors=FALSE)
 
-# Filtering out the rows that contain inconsistencies 
-newdata %>%
-  filter_all(any_vars(str_detect(., pattern = "TRUE")))
-
-# localizeERRORS : telling the exact location where inconsistencies happen in the data table
-DE2 <- localizeErrors(EF,data)
-DE2 <- data.frame(DE2$adapt)
-
-# FUNCTION to change logical elements to character
-newdata <- data.frame(lapply(DE2, function(x) if(is.logical(x)) { 
-  return(as.character(x))
-} else {  
-  return(x) 
+localize<- function(data,filepath){
+  rules <- editruls::editfile(filepath)
+  errors<- data.frame((editrules::localizeErrors(rules, data))$adapt)
+  newdata <- data.frame(lapply(DE2, function(x) if(is.logical(x)) { 
+    return(as.character(x))
+  } else {  
+    return(x) 
+  }
+  ), stringsAsFactors=FALSE)
+  newdata %>%
+    dplyr::filter_all(any_vars(stringr::str_detect(., pattern = "TRUE")))
+  # write the results in a text file 
 }
-), stringsAsFactors=FALSE)
-
-# Filtering out the rows that contain inconsistencies 
-newdata %>%
-  filter_all(any_vars(str_detect(., pattern = "TRUE")))
