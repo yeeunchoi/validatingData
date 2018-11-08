@@ -26,14 +26,6 @@ meta_list <- function(metadata,label){
 
 ### 2. Validating Columns 
 
-#--------------------------------------------------------------------------------------------------#
-# checking if the data file does not contain header
-header <- function (data){
-  # check if there is a header in data file 
-}
-#--------------------------------------------------------------------------------------------------#
-
-
 # checking if the item in the data file matches with the labels in the metadata using two lists generated
   # returns TRUE or FALSE 
 ismatching<- function (datalist, metalist){
