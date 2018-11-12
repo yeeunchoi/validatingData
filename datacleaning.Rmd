@@ -1,0 +1,118 @@
+---
+title: "Data Cleaning Project"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# A function to check if necessary packages are downloaded
+  # if downloaded, load them to the program
+  # if not, download the package and load
+ipak <- function(pkg){
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(new.pkg)) 
+    install.packages(new.pkg, dependencies = TRUE)
+  sapply(pkg, require, character.only = TRUE)
+}
+# Required Packages
+packages <- c("dplyr", "readxl", "editrules", "knitr")
+ipak(packages)
+```
+
+### Data Cleaning with R
+
+
+## Open Data / Metadata
+```{r}
+# Original Data
+orgdata <- readxl::read_xlsx("testdata.xlsx")
+# generating a new data with assigned row numbers for future reference
+data<- orgdata %>%
+  mutate(rownum = 1:n())
+
+# Metadata
+metadata <- readxl::read_excel("testmetadata.xlsx")
+# Omitting the first row b/c it contains nothing
+metadata<- metadata[-1,]
+
+# printing data/metadata
+head(orgdata)
+head(metadata)
+```
+
+## Column Checks 
+```{r}
+# make a list of columns in the data
+heading <- c(names(orgdata))
+# make a list of items in the metadata
+labels <- unlist(c(dplyr::select(metadata, Label)), use.names = FALSE)
+# check to see if two are identical
+identical(heading, lables)
+```
+
+## Null value Detection 
+```{r}
+# make a list of columns that should never contain null based on the information given in metadata
+nullList <- metadata %>%
+  filter(Nullble == "no") %>%   # filter where the nullable section says no, 
+  select(Label)                 # and select labels to store them in a vector 
+nullList<- rep(nullList)
+
+# filtering columns that should not contain null values 
+for (item in nullList){
+  selected<- data %>%
+    dplyr::select(item)
+}
+
+isnull <- data.frame(is.na(selected))
+nullresult <- as.data.frame(which(isnull == "TRUE", arr.ind = TRUE))
+# gives output of row & col numbers which contain NA 
+rowlist1 <- c((as.numeric(sort(nullresult[,"row"]))))
+rowlist1 <- unique(rowlist1)  # remove duplicates
+
+for (i in rowlist1){
+  cat(paste(data[i,]),'\n', file = "results.txt", sep = '\t', append = T)
+}
+
+# write the result in results.txt file
+```
+
+
+## Inconsistent Value Detection 
+```{r}
+# Setting up rules/restrictions
+numrule <- as.data.frame(na.omit(select(metadata, Label, X__1, X__2)))  # X__1: min / X__2 : max
+# catrule ? how to add??
+
+for (i in 1:nrow(numrule)){
+  min <- paste(numrule[i,1], ">=", numrule[i,2])
+  cat(min, '\n', file = "rules.txt", append = T)
+  max <- paste(numrule[i,1], "<=", numrule[i,3])
+  cat(max, '\n', file = "rules.txt", append = T)
+}
+
+rule <- editrules::editfile("rules.txt")
+errors <- data.frame(editrules::violatedEdits(rule, data))
+E <- as.data.frame(which(errors=="TRUE", arr.ind = TRUE)) # tells which rule has been violated 
+
+rowlist2 <-  c((as.numeric(sort(E[,"row"]))))
+for (i in rowlist2){
+  cat(paste(data[i,]),'\n', file = "testing2.txt", sep = "\t", append=T)
+}
+```
+
+
+# To be written in the summary file 
+```{r}
+# Number of items in the data to be reported #
+
+datarow<-nrow(orgdata) # num of rows in data
+datacol<-ncol(orgdata) # num of cols in data
+metaitem<-nrow(meta)    # num of items in metadata, which should be identical to num of cols in data
+
+numnull<-length(isnull[isnull == TRUE])  # count null °¹¼ö to be stored in summary text file
+
+numincon<-nrow(E)
+
+```
