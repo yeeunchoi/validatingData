@@ -5,7 +5,6 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-
 # A function to check if necessary packages are downloaded
   # if downloaded, load them to the program
   # if not, download the package and load
@@ -28,8 +27,7 @@ ipak(packages)
 # Original Data
 orgdata <- readxl::read_xlsx("testdata.xlsx")
 # generating a new data with assigned row numbers for future reference
-data<- orgdata %>%
-  mutate(rownum = 1:n())
+data <- cbind(rownum = 1:nrow(orgdata), orgdata)
 
 # Metadata
 metadata <- readxl::read_excel("testmetadata.xlsx")
@@ -48,14 +46,16 @@ heading <- c(names(orgdata))
 # make a list of items in the metadata
 labels <- unlist(c(dplyr::select(metadata, Label)), use.names = FALSE)
 # check to see if two are identical
-identical(heading, lables)
+identical(heading, labels)
+# if this returns false, the program should be terminated
 ```
 
 ## Null value Detection 
 ```{r}
 # make a list of columns that should never contain null based on the information given in metadata
+# change every character to lower case for NULLABLE part only 
 nullList <- metadata %>%
-  filter(Nullble == "no") %>%   # filter where the nullable section says no, 
+  filter(Nullble == "no") %>%   # filter where the nullable section says no, ('no','f','false' )
   select(Label)                 # and select labels to store them in a vector 
 nullList<- rep(nullList)
 
@@ -71,19 +71,40 @@ nullresult <- as.data.frame(which(isnull == "TRUE", arr.ind = TRUE))
 rowlist1 <- c((as.numeric(sort(nullresult[,"row"]))))
 rowlist1 <- unique(rowlist1)  # remove duplicates
 
-for (i in rowlist1){
-  cat(paste(data[i,]),'\n', file = "results.txt", sep = '\t', append = T)
-}
+    ###############################################################
+    variables = ncol(data)
+    iterations = length(rowlist1)
+    
+    df1 <- data.frame(matrix(ncol = variables, nrow = iterations))
+    for (i in 1:iterations){
+      df1[i,]<- data[rowlist1[i],]
+    }
+    ###############################################################
 
-# write the result in results.txt file
+df1
+    
+colnames(df1)<- c(names(data))
+
+write.table(df1, "testingfile.txt",sep = '\t', row.names = FALSE)
 ```
 
 
 ## Inconsistent Value Detection 
 ```{r}
 # Setting up rules/restrictions
+metadata
 numrule <- as.data.frame(na.omit(select(metadata, Label, X__1, X__2)))  # X__1: min / X__2 : max
+catrule <- as.data.frame(na.omit(select(metadata, Label, description)))
+catrule
 # catrule ? how to add??
+description<- as.vector(select(catrule, description))
+for (item in description){
+  print(item)
+} # separate items by commas 
+
+for (i in 1:nrow(catrule)){
+    
+}
 
 for (i in 1:nrow(numrule)){
   min <- paste(numrule[i,1], ">=", numrule[i,2])
@@ -97,22 +118,30 @@ errors <- data.frame(editrules::violatedEdits(rule, data))
 E <- as.data.frame(which(errors=="TRUE", arr.ind = TRUE)) # tells which rule has been violated 
 
 rowlist2 <-  c((as.numeric(sort(E[,"row"]))))
-for (i in rowlist2){
-  cat(paste(data[i,]),'\n', file = "testing2.txt", sep = "\t", append=T)
+length(rowlist2)
+df2 <- data.frame(matrix(ncol = variables, nrow = length(rowlist2)))
+colnames(df2)<- c(names(data))
+for (i in 1:length(rowlist2)){
+  df2[i,]<- data[rowlist2[i],]
 }
+
+df2
+write.table(df2, "testingfile.txt", sep= '\t', row.names=FALSE)
 ```
 
 
 # To be written in the summary file 
 ```{r}
 # Number of items in the data to be reported #
-
 datarow<-nrow(orgdata) # num of rows in data
 datacol<-ncol(orgdata) # num of cols in data
-metaitem<-nrow(meta)    # num of items in metadata, which should be identical to num of cols in data
-
-numnull<-length(isnull[isnull == TRUE])  # count null °¹¼ö to be stored in summary text file
-
+metaitem<-nrow(metadata)    # num of items in metadata, which should be identical to num of cols in data
+numnull<-length(isnull[isnull == TRUE])  
 numincon<-nrow(E)
+```
+
+
+```{r}
+# function to create formatted tabular data
 
 ```

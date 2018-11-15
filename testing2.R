@@ -125,6 +125,8 @@ for (i in blist){
 
 # formatting test
 new<- knitr::kable(data, format = "rst")
+new
+
 write.table(new, file = "format.txt")
 class(new)
   
