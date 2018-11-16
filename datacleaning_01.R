@@ -1,30 +1,12 @@
----
-title: "Data Cleaning Project"
-output:
-  html_document: default
-  pdf_document: default
----
-The project is about performing one of the important steps of preprocessing data: Data Cleaning. 
-This program especially cleans data with the information given from metadata that includes information about the raw data file. 
-Therefore, in order to perform this program, it is mandatory to submit metadata with the raw data files. 
+#################################################
+datapath <- "testdata.xlsx"
+metapath <- "testmetadata.xlsx"
+#################################################
 
-This program can be defined into three major steps: *Validation of Column*, *Detection of Null Values*, and *Detection of Inconsistency*.
-
-Each chunks below has the title and a brief explanation. For a detailed explanation about specific lines of codes, see the comments in the chunks.
-
-### Load packages
-
-Since R stores tons of useful packages in its library, this program has downloaded and implemented some useful packages. 
-
-* dplyr : provides a flexible grammar of data manipulation/ focuses on tools for working with data frames 
-* readxl : imports excel files into R
-* editrules : checks data frames and detects errors 
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+      ###Loading Packages###
 # A function to check if necessary packages are downloaded
-  # if downloaded, load them to the program
-  # if not, download the package and load
+# if downloaded, load them to the program
+# if not, download the package and load
 ipak <- function(pkg){
   new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
   if (length(new.pkg)) 
@@ -34,50 +16,36 @@ ipak <- function(pkg){
 # Required Packages
 packages <- c("dplyr", "readxl", "editrules")
 ipak(packages)
-```
 
-
-### Open Data / Metadata
-
-Reading data file / metadata into R by using read_xlsx function in readxl package. If the format of the data file is not xlsx, other functions such as *read.csv()* can be used to open data files. 
-```{r}
+      ###Readeing Data Files###
 # Original Data
-orgdata <- readxl::read_xlsx("testdata.xlsx")
+orgdata <- readxl::read_xlsx(datapath)
 # generating a new data with assigned row numbers for future reference
 nrow<- nrow(orgdata) + 1 # should add 1 in order to have the same row number as the actual excel file 
 data <- cbind(rownum = 2:nrow, orgdata)
 
 # Metadata
-metadata <- readxl::read_excel("testmetadata.xlsx")
+metadata <- readxl::read_excel(metapath)
 # Omitting the first row b/c it contains nothing
 metadata<- metadata[-1,]
-```
 
-### Column Checks 
-
-In this step, the columns of the data are checked. 
-The columns in the data file and labels provided in metadata flie should match. 
-```{r}
+      ###Validation of Column###
 # make a list of columns in the data
 heading <- c(names(orgdata))
 # make a list of items in the metadata
 labels <- unlist(c(dplyr::select(metadata, Label)), use.names = FALSE)
 # check to see if two are identical
 ismatching<-identical(heading, labels)
-```
 
-### Null Detection 
 
-In this step, unnecessary null values are detected. 
-
-```{r}
+      ###Detection of Null###
 # make a list of columns that should never contain null based on the information given in metadata
 # change every character to lower case for NULLABLE part only 
 nullList <- metadata %>%
   filter(sapply(Nullble,tolower) %in% c("no","f","false")) %>%   
   # filter where the nullable section says no, ('no','f','false' )
   select(Label)                 
-  # and select labels to store them in a vector 
+# and select labels to store them in a vector 
 nullList<- rep(nullList)
 
 # filtering columns that should not contain null values 
@@ -89,29 +57,22 @@ isnull <- data.frame(is.na(selected))
 nullresult <- as.data.frame(which(isnull == "TRUE", arr.ind = TRUE)) # telling the row num and col num of the data cell containing null
 # removing duplicates and extract row numbers to filter the rows out
 rowlist1 <- unique(c((as.numeric(sort(nullresult[,"row"])))))
-    
+
 variables = ncol(data)
 iterations = length(rowlist1)
 
 # initiate to create result table that tells which rows contains null   
 df1 <- data.frame(matrix(ncol = variables, nrow = iterations))
-    
+
 for (i in 1:iterations){
   df1[i,]<- data[rowlist1[i],]
 }
 # setting up column names
 colnames(df1)<- c(names(data))
-```
 
 
-### Inconsistent Value Detection 
-
-In the metadata, the researcher should enter the range or other special descriptions that should be considered before cleaning the data. 
-In this step, rules against the data are generated from all necessary informations from metadata. Based on the rules, this program will detect and filter out the data object that is inconsistent with the rules. 
-
-```{r}
+      ###Detection of Null###
 # Setting up rules/restrictions
-
 # numerical rules
 numrule <- as.data.frame(na.omit(select(metadata, Label, X__1, X__2)))  # X__1: min / X__2 : max
 
@@ -135,14 +96,8 @@ colnames(df2)<- c(names(data)) # setting up column names
 for (i in 1:length(rowlist2)){
   df2[i,]<- data[rowlist2[i],]
 }
-```
 
-
-### To be written in the summary file 
-
-All the outputs of steps above will be written in a text file called "results.txt" and saved on the same directory as this program. 
-
-```{r}
+      ###Generating Result File###
 # Number of items in the data to be reported 
 cat(paste("Number of rows in the data : ", nrow(orgdata),'\n'), file = "results.txt", append = T)
 cat(paste("Number of columns in the data : ", ncol(orgdata),'\n'), file = "results.txt", append = T)
@@ -157,7 +112,3 @@ write.table(df1, "results.txt",sep = '\t', row.names = FALSE, append = T)
 cat(paste("\n","Inconsistency Detection Result","\n"), file = "results.txt", append = T)
 cat(paste("Number of Inconsistent values in the data : ", nrow(E),'\n'), file = "results.txt", append = T)
 write.table(df2, "results.txt", sep= '\t', row.names=FALSE, append = T)
-```
-
-For more detail information and codes,
-See: https://github.com/yeeunchoi/validatingData
